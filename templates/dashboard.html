@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card p-4">
+      <h4 class="mb-3">Mark Attendance</h4>
+      {% if current_user.role == 'student' %}
+      <form method="post">
+        <!-- Unit selection: use unit_id -->
+        <div class="mb-3">
+          <label for="unit_id" class="form-label">Select Unit</label>
+          <select class="form-select" name="unit_id" id="unit_id" required>
+            <option value="" disabled selected>-- Choose a Unit --</option>
+            {% for unit in units %}
+              <option value="{{ unit.id }}">{{ unit.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Camera preview -->
+        <div class="ratio ratio-16x9 bg-body-secondary rounded mb-2">
+          <video id="video" autoplay playsinline></video>
+        </div>
+        <div class="d-flex gap-2 mb-2">
+          <button type="button" class="btn btn-outline-primary" onclick="capture()">Capture & Submit</button>
+          <button type="button" class="btn btn-outline-secondary" onclick="flipCamera()">Flip</button>
+        </div>
+        <img id="preview" class="img-fluid rounded d-none" alt="preview">
+        <input type="hidden" id="face_image" name="face_image">
+      </form>
+      {% else %}
+      <p class="text-muted">
+        Instructors/Admins can view logs and mark attendance from 
+        <a href="{{ url_for('attendance.logs') }}">Logs</a>.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card p-4">
+      <h5 class="mb-3">Your Status</h5>
+      <div class="stat mb-2">Days Present: <strong>{{ present_days }}</strong></div>
+      <div class="stat mb-2">Total Days: <strong>{{ total_days }}</strong></div>
+      <div class="stat">Attendance Rate: <strong>{{ rate }}%</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let video = document.getElementById('video');
+let streamRef = null;
+let useFacing = 'user';
+
+function startCamera(){
+  if(!video) return;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: useFacing } })
+    .then(stream => { streamRef = stream; video.srcObject = stream; })
+    .catch(err => { console.error(err); alert('Camera access error'); });
+}
+
+function flipCamera(){
+  useFacing = (useFacing === 'user') ? 'environment' : 'user';
+  if(streamRef){ streamRef.getTracks().forEach(t=>t.stop()); }
+  startCamera();
+}
+
+function capture(){
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const data = canvas.toDataURL('image/png');
+  document.getElementById('face_image').value = data;
+  document.querySelector('form').submit();
+}
+
+startCamera();
+</script>
+{% endblock %}
