@@ -3,6 +3,7 @@
 
 ## Quick Start
 ```bash
+cd path\to\where\its\extracted
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
